@@ -271,6 +271,7 @@ def index():
         try:
             pub.get_from_query(article_query)
         except:
+            print(f'Failed to acquire {article_query}')
             return render_template('index.html', plot_div=f"<br><br><h2><center>{article_query} not found, or API inaccessible</center></h2>")
 
         return generate_graph_html(pub, depth, nodes)
@@ -287,4 +288,4 @@ def paper_page(num):
     return paper_page_html
   
 if __name__=='__main__':
-    app.run(debug=True, port=7000)
+    app.run(debug=False)
