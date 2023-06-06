@@ -9,6 +9,8 @@ import plotly
 import plotly.graph_objects as go
 from igraph import Graph, EdgeSeq
 from flask import Flask, render_template, request, session
+from flask_session import Session
+from flask_ngrok import run_with_ngrok
 import secrets
 
 
@@ -83,9 +85,9 @@ class Paper:
         self.blurb = div.find('div', {'class' : 'gs_rs'}).text
 
         # self.citations = [i['href'] for i in div.find('div', {'class' : 'gs_fl'}).find_all('a') if 'cites' in i['href']]
-        self.citations = [i['href'] for i in div.findAll('a') if '/scholar?cites' in str(i)][0]
+        self.citations = [i['href'] for i in div.findAll('a') if '/scholar?cites' in str(i)]
         if self.citations:
-            self.citations = 'https://scholar.google.com' + self.citations
+            self.citations = 'https://scholar.google.com' + self.citations[0]
         else:
             self.citations = 'N/A'
 
@@ -193,6 +195,10 @@ def create_graph(tree, ids, title):
 
 app = Flask(__name__)
 app.secret_key = secrets.token_urlsafe(16)
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
+# run_with_ngrok(app)
 
 with open('./templates/paper.html', 'r') as f:
     paper_html = f.read()
@@ -230,14 +236,17 @@ def generate_graph_html(pub, depth, nodes):
         print(f'Entries to check: {to_check}')
         for current_entry in to_check:
             print(f'Checking: {current_entry}')
-            time.sleep(1)
+            # time.sleep(1)
             current_pubs = get_citations(query_ids[current_entry][1], nodes)
 
             for n, i in enumerate(current_pubs):
+                max_val = max(set(chain(*[list(query_tree.keys())] + list(query_tree.values()))))
                 if current_entry in query_tree:
-                    query_tree[current_entry].append(n + (nodes * current_entry) + 1)
+                    # query_tree[current_entry].append(n + (nodes * current_entry) + 1)
+                    query_tree[current_entry].append(max_val + 1)
                 else:
-                    query_tree[current_entry] = [n + (nodes * current_entry) + 1]
+                    # query_tree[current_entry] = [n + (nodes * current_entry) + 1]
+                    query_tree[current_entry] = [max_val + 1]
                 query_ids[query_tree[current_entry][-1]] = ['UNCHECKED', i]
                 if query_ids[query_tree[current_entry][-1]][1].citations == 'N/A':
                     query_ids[query_tree[current_entry][-1]] = ['NOT CITED', i]
@@ -249,7 +258,11 @@ def generate_graph_html(pub, depth, nodes):
             else:
                 graph_title = f'Root paper "{query_ids[0][1].title}", depth of {depth} with {nodes} node'
 
+    print(f'Tree: {query_tree}')
+
     fig = create_graph(query_tree, query_ids, graph_title)
+
+    session.clear()
 
     get_relevant_info = lambda val: [str(val), val.blurb, val.link, val.other_links]
     query_results = {str(key) : generate_paper_html(*get_relevant_info(value[1])) for key, value in query_ids.items()}
@@ -288,4 +301,7 @@ def paper_page(num):
     return paper_page_html
   
 if __name__=='__main__':
-    app.run(debug=False)
+    app.run(debug=True)
+    # https://pubmed.ncbi.nlm.nih.gov/31136765/
+
+# https://datalore-forum.jetbrains.com/t/permission-denied-tmp-ngrok-ngrok/989/3
