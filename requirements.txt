@@ -10,3 +10,4 @@ plotly==5.14.1
 requests==2.27.1
 igraph==0.10.4
 flask-ngrok==0.0.25
+lxml==4.7.1
