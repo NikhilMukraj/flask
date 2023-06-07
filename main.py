@@ -80,7 +80,11 @@ class Paper:
 
         self.authors = div.find('div', {'class' : 'gs_a'}).text.split('\xa0')[0]
 
-        self.year = int([i for i in re.split('-|,| ', div.find('div', {'class' : 'gs_a'}).text) if i.isdigit()][0])
+        self.year = [i for i in re.split('-|,| ', div.find('div', {'class' : 'gs_a'}).text) if i.isdigit()]
+        if self.year:
+            self.year = int(self.year[0])
+        else:
+            self.year = 'Unknown year'
 
         self.blurb = div.find('div', {'class' : 'gs_rs'}).text
 
@@ -303,5 +307,11 @@ def paper_page(num):
 if __name__=='__main__':
     app.run(debug=True)
     # https://pubmed.ncbi.nlm.nih.gov/31136765/
+
+'''
+CREATE TOR SESSION EACH TIME GRAPH IS NEEDED TO BE MADE
+https://stackoverflow.com/questions/30286293/make-requests-using-python-over-tor
+https://stackoverflow.com/questions/23013220/max-retries-exceeded-with-url-in-requests
+'''
 
 # https://datalore-forum.jetbrains.com/t/permission-denied-tmp-ngrok-ngrok/989/3
